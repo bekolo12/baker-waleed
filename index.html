@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" class="dark">
   <head>
@@ -25,10 +26,12 @@
       :root {
         --bg-main: #f8fafc;
         --bg-card: #ffffff;
+        --border: #e2e8f0;
       }
       .dark :root {
         --bg-main: #0f0f23;
         --bg-card: #1a1a2e;
+        --border: #2a2a4a;
       }
       body {
         background-color: var(--bg-main);
@@ -61,6 +64,9 @@
   }
 }
 </script>
+<!-- Google Scripts for Drive Integration -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
 </head>
   <body class="transition-colors duration-300">
     <div id="root"></div>

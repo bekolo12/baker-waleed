@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import HomeView from './components/views/HomeView';
@@ -15,12 +16,18 @@ import {
   INITIAL_GOALS, INITIAL_DOCS, INITIAL_WHITEBOARDS 
 } from './constants';
 import { Inbox, FileText, Target, Shapes, PieChart } from 'lucide-react';
+import { initDriveApi, handleAuthClick, saveToDrive, loadFromDrive } from './services/driveService';
 
 const App: React.FC = () => {
   // Authentication State
   const [user, setUser] = useState<string | null>(() => {
     return localStorage.getItem('taskflow_user');
   });
+
+  // Google Drive State
+  const [isDriveReady, setIsDriveReady] = useState(false);
+  const [isDriveConnected, setIsDriveConnected] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Global State with Persistence
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -52,7 +59,14 @@ const App: React.FC = () => {
   // Timer State
   const [timer, setTimer] = useState<TimerState>({ running: false, taskId: null, startTime: null, elapsed: 0 });
 
-  // Persistence Effects
+  // Initialize Drive API on mount
+  useEffect(() => {
+    initDriveApi((success) => {
+      setIsDriveReady(success);
+    });
+  }, []);
+
+  // Persistence Effects (Local)
   useEffect(() => {
     localStorage.setItem('taskflow_tasks', JSON.stringify(tasks));
   }, [tasks]);
@@ -90,13 +104,62 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [timer.running]);
 
-  // Handlers
+  // Drive Handlers
+  const handleConnectDrive = () => {
+    handleAuthClick(async () => {
+      setIsDriveConnected(true);
+      await handleSync(true); // Initial sync (load)
+    });
+  };
+
+  const handleSync = async (forceLoad = false) => {
+    if (!user) return;
+    setIsSyncing(true);
+    try {
+      if (forceLoad) {
+        // Try to load first
+        const cloudData = await loadFromDrive(user);
+        if (cloudData) {
+          if (confirm('Found existing data on Drive. Do you want to load it and overwrite local changes?')) {
+            setTasks(cloudData.tasks || []);
+            setWorkspaces(cloudData.workspaces || []);
+            setActivities(cloudData.activities || []);
+          }
+        } else {
+          // No file exists, save current state
+          await saveToDrive(user, { tasks, workspaces, activities });
+        }
+      } else {
+        // Just save
+        await saveToDrive(user, { tasks, workspaces, activities });
+      }
+    } catch (error) {
+      console.error("Sync failed", error);
+      alert("Failed to sync with Google Drive. Check console for details.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Debounced auto-save to Drive when data changes
+  useEffect(() => {
+    if (isDriveConnected && user) {
+      const timeout = setTimeout(() => {
+        handleSync(false);
+      }, 5000); // Auto-save 5 seconds after last change
+      return () => clearTimeout(timeout);
+    }
+  }, [tasks, workspaces, activities, isDriveConnected, user]);
+
+
+  // App Handlers
   const handleLogin = (username: string) => {
     setUser(username);
   };
 
   const handleLogout = () => {
     setUser(null);
+    setIsDriveConnected(false);
   };
 
   const handleCreateTask = (status: Status = 'todo') => {
@@ -221,6 +284,12 @@ const App: React.FC = () => {
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters(!showFilters)}
+          // Drive Props
+          isDriveReady={isDriveReady}
+          isDriveConnected={isDriveConnected}
+          onConnectDrive={handleConnectDrive}
+          onSyncDrive={() => handleSync(false)}
+          isSyncing={isSyncing}
         />
 
         {showFilters && (

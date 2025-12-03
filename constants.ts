@@ -1,7 +1,18 @@
+
 import { Task, Goal, Workspace, Activity, Doc, Whiteboard } from './types';
 
 const now = Date.now();
 const day = 24 * 60 * 60 * 1000;
+
+// GOOGLE DRIVE CONFIGURATION
+// TODO: Replace these with your actual credentials from Google Cloud Console
+export const GOOGLE_CONFIG = {
+  CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID', // e.g., "123456789-abc...apps.googleusercontent.com"
+  API_KEY: 'YOUR_GOOGLE_API_KEY',     // e.g., "AIzaSy..."
+  // The folder ID you provided
+  FOLDER_ID: '1BnTF6h-Vg1A4iy_aMr3lZabbnY5jeaBk', 
+  SCOPES: 'https://www.googleapis.com/auth/drive.file'
+};
 
 export const INITIAL_WORKSPACES: Workspace[] = [
   { id: 'ws1', name: 'Marketing Team', icon: '📈', color: '#8b5cf6' },

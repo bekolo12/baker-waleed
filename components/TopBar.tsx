@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { 
   Menu, List, Kanban, Calendar, Activity, Table, 
-  Filter, Moon, Sun, Bell, Clock, StopCircle 
+  Filter, Moon, Sun, Bell, Clock, StopCircle, Cloud, RefreshCw
 } from 'lucide-react';
 import { TaskViewType, TimerState, FilterState } from '../types';
 
@@ -15,6 +16,12 @@ interface TopBarProps {
   onToggleSidebar: () => void;
   showFilters: boolean;
   onToggleFilters: () => void;
+  // Drive Props
+  isDriveReady: boolean;
+  isDriveConnected: boolean;
+  onConnectDrive: () => void;
+  onSyncDrive: () => void;
+  isSyncing: boolean;
 }
 
 const TopBar: React.FC<TopBarProps> = ({
@@ -26,7 +33,12 @@ const TopBar: React.FC<TopBarProps> = ({
   onStopTimer,
   onToggleSidebar,
   showFilters,
-  onToggleFilters
+  onToggleFilters,
+  isDriveReady,
+  isDriveConnected,
+  onConnectDrive,
+  onSyncDrive,
+  isSyncing
 }) => {
   
   const formatTimer = (elapsed: number) => {
@@ -50,8 +62,38 @@ const TopBar: React.FC<TopBarProps> = ({
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Drive Integration */}
+        {isDriveReady && (
+          <div className="flex items-center">
+            {!isDriveConnected ? (
+              <button 
+                onClick={onConnectDrive}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-600/20 rounded-lg text-sm hover:bg-blue-600/20 transition-colors"
+                title="Save data to Google Drive"
+              >
+                <Cloud size={16} />
+                <span className="hidden md:inline">Connect Drive</span>
+              </button>
+            ) : (
+              <button 
+                onClick={onSyncDrive}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors border ${
+                  isSyncing 
+                    ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' 
+                    : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 hover:bg-green-500/20'
+                }`}
+                title={isSyncing ? "Syncing..." : "Synced with Google Drive"}
+                disabled={isSyncing}
+              >
+                <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
+                <span className="hidden md:inline">{isSyncing ? "Syncing..." : "Synced"}</span>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* View Switcher */}
-        <div className="hidden md:flex items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+        <div className="hidden lg:flex items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
           <ViewBtn active={currentTaskView === 'list'} icon={<List size={16} />} onClick={() => onChangeTaskView('list')} />
           <ViewBtn active={currentTaskView === 'kanban'} icon={<Kanban size={16} />} onClick={() => onChangeTaskView('kanban')} />
           <ViewBtn active={currentTaskView === 'calendar'} icon={<Calendar size={16} />} onClick={() => onChangeTaskView('calendar')} />
@@ -67,7 +109,7 @@ const TopBar: React.FC<TopBarProps> = ({
           }`}
         >
           <Filter size={16} />
-          <span className="hidden sm:inline">Filter</span>
+          <span className="hidden md:inline">Filter</span>
         </button>
 
         {/* Timer */}
