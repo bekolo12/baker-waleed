@@ -1,0 +1,5 @@
+{
+  "name": "TaskFlow",
+  "description": "A comprehensive project management platform featuring Kanban, Gantt, Calendar, and List views with dark mode support.",
+  "requestFramePermissions": []
+}
